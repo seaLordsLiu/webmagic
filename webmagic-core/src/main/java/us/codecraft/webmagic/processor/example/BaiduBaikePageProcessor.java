@@ -1,13 +1,7 @@
 package us.codecraft.webmagic.processor.example;
 
-import us.codecraft.webmagic.Page;
-import us.codecraft.webmagic.ResultItems;
-import us.codecraft.webmagic.Site;
-import us.codecraft.webmagic.Spider;
+import us.codecraft.webmagic.*;
 import us.codecraft.webmagic.processor.PageProcessor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author code4crafter@gmail.com <br>
@@ -19,9 +13,10 @@ public class BaiduBaikePageProcessor implements PageProcessor {
             .setRetryTimes(3).setSleepTime(1000).setUseGzip(true);
 
     @Override
-    public void process(Page page) {
-        page.putField("name", page.getHtml().css("dl.lemmaWgt-lemmaTitle h1","text").toString());
-        page.putField("description", page.getHtml().xpath("//div[@class='lemma-summary']/allText()"));
+    public void process(PageResult result, Page page) {
+        result.getResultItems().put("name", page.getHtml().css("dl.lemmaWgt-lemmaTitle h1","text").toString());
+        result.getResultItems().put("description", page.getHtml().xpath("//div[@class='lemma-summary']/allText()"));
+        result.getResultItems().setSkip(Boolean.FALSE);
     }
 
     @Override
@@ -29,23 +24,17 @@ public class BaiduBaikePageProcessor implements PageProcessor {
         return site;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         //single download
-        Spider spider = Spider.create(new BaiduBaikePageProcessor()).thread(2);
-        String urlTemplate = "http://baike.baidu.com/search/word?word=%s&pic=1&sug=1&enc=utf8";
-        ResultItems resultItems = spider.<ResultItems>get(String.format(urlTemplate, "水力发电"));
-        System.out.println(resultItems);
+        SpiderFactoryImpl factory = new SpiderFactoryImpl();
 
-        //multidownload
-        List<String> list = new ArrayList<String>();
-        list.add(String.format(urlTemplate,"风力发电"));
-        list.add(String.format(urlTemplate,"太阳能"));
-        list.add(String.format(urlTemplate,"地热发电"));
-        list.add(String.format(urlTemplate,"地热发电"));
-        List<ResultItems> resultItemses = spider.<ResultItems>getAll(list);
-        for (ResultItems resultItemse : resultItemses) {
-            System.out.println(resultItemse.getAll());
-        }
-        spider.close();
+        Spider spider = factory.getSpider(new BaiduBaikePageProcessor());
+
+        String urlTemplate = "http://baike.baidu.com/search/word?word=%s&pic=1&sug=1&enc=utf8";
+        spider.start(String.format(urlTemplate, "水力发电"));
+
+
+        Thread.sleep(1000000L);
+
     }
 }

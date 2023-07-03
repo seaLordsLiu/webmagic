@@ -22,10 +22,6 @@ public class QueueScheduler extends DuplicateRemovedScheduler implements Monitor
 
     private final BlockingQueue<Request> queue;
 
-    public QueueScheduler() {
-        this.queue = new LinkedBlockingQueue<>();
-    }
-
     /**
      * Creates a {@code QueueScheduler} with the given (fixed) capacity.
      *

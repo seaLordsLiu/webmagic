@@ -1,6 +1,7 @@
 package us.codecraft.webmagic.processor;
 
 import us.codecraft.webmagic.Page;
+import us.codecraft.webmagic.PageResult;
 import us.codecraft.webmagic.Site;
 
 /**
@@ -27,7 +28,7 @@ public interface PageProcessor {
      *
      * @param page page
      */
-    void process(Page page);
+    void process(PageResult result, Page page);
 
     /**
      * Returns the site settings.

@@ -21,11 +21,11 @@ public interface Downloader {
      * @param task task
      * @return page
      */
-    public Page download(Request request, Task task);
+    Page download(Request request, Task task);
 
     /**
      * Tell the downloader how many threads the spider used.
      * @param threadNum number of threads
      */
-    public void setThread(int threadNum);
+    void setThread(int threadNum);
 }

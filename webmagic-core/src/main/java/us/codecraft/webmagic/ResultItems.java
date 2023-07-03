@@ -14,11 +14,12 @@ import java.util.Map;
  */
 public class ResultItems {
 
-    private Map<String, Object> fields = new LinkedHashMap<String, Object>();
+    private final Map<String, Object> fields = new LinkedHashMap<String, Object>();
 
     private Request request;
 
     private boolean skip;
+
 
     @SuppressWarnings("unchecked")
     public <T> T get(String key) {
