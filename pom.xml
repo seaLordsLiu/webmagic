@@ -34,7 +34,8 @@
         <saxon-he.version>11.4</saxon-he.version>
         <selenium-java.version>3.141.59</selenium-java.version>
         <slf4j.version>2.0.4</slf4j.version>
-        <xsoup.version>0.3.5</xsoup.version>
+        <!-- 这是自定义的xsoup包. 真实的包目前只有0.3.7 -->
+        <xsoup.version>0.3.7-bate</xsoup.version>
         <lombok.version>1.18.26</lombok.version>
     </properties>
     <artifactId>webmagic-parent</artifactId>
@@ -126,7 +127,7 @@
             <dependency>
                 <groupId>us.codecraft</groupId>
                 <artifactId>xsoup</artifactId>
-                <version>0.3.7</version>
+                <version>${xsoup.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba</groupId>

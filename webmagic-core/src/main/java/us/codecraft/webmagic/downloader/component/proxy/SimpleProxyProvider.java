@@ -1,4 +1,4 @@
-package us.codecraft.webmagic.proxy;
+package us.codecraft.webmagic.downloader.component.proxy;
 
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Request;

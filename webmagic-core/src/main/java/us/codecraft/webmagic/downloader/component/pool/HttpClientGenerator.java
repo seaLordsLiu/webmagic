@@ -1,4 +1,4 @@
-package us.codecraft.webmagic.downloader;
+package us.codecraft.webmagic.downloader.component.pool;
 
 import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.SystemUtils;
@@ -16,6 +16,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import us.codecraft.webmagic.Site;
+import us.codecraft.webmagic.downloader.CustomRedirectStrategy;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;

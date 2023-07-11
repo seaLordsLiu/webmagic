@@ -8,11 +8,15 @@ import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.scheduler.Scheduler;
 import us.codecraft.webmagic.scheduler.ThreadLocalQueueScheduler;
 
+import java.lang.annotation.Annotation;
+import java.util.List;
+
 /**
  * @author liu xw
  * @date 2023 07-03
  */
 public class SpiderFactoryImpl implements SpiderFactory {
+
 
     /**
      * 下载处理器

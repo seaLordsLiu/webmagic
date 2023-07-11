@@ -11,7 +11,7 @@ import us.codecraft.webmagic.scheduler.component.DuplicateRemover;
  * @author liu xw
  * @date 2023 07-03
  */
-public class ThreadLocalQueueScheduler extends DuplicateRemovedScheduler implements MonitorableScheduler {
+public class ThreadLocalQueueScheduler extends DuplicateRemovedScheduler {
 
     private static final ThreadLocal<QueueScheduler> threadLocalContextQueue = new InheritableThreadLocal<>();
 
@@ -52,16 +52,6 @@ public class ThreadLocalQueueScheduler extends DuplicateRemovedScheduler impleme
     @Override
     protected void pushWhenNoDuplicate(Request request, Task task) {
         this.getContext().pushWhenNoDuplicate(request,task);
-    }
-
-    @Override
-    public int getLeftRequestsCount(Task task) {
-        return this.getContext().getLeftRequestsCount(task);
-    }
-
-    @Override
-    public int getTotalRequestsCount(Task task) {
-        return this.getContext().getTotalRequestsCount(task);
     }
 
     @Override

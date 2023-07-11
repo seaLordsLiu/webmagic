@@ -55,15 +55,18 @@ public class Spider implements Runnable, Task {
     protected final Scheduler scheduler;
 
 
-    public void start(String url){
-        Request request = new Request(url);
+    public void start(String url, Class<?> modelClass){
+        Request request = new Request(url, modelClass);
         this.addRequest(request);
-        this.run();
-        ThreadLocalQueueScheduler.clearContext();
+        try {
+            this.run();
+        }finally {
+            ThreadLocalQueueScheduler.clearContext();
+        }
     }
 
-    public void startAsync(String url){
-        Request request = new Request(url);
+    public void startAsync(String url, Class<?> modelClass){
+        Request request = new Request(url, modelClass);
         this.addRequest(request);
         CompletableFuture<Void> future = CompletableFuture.runAsync(this);
         future.thenRun(ThreadLocalQueueScheduler::clearContext);
@@ -120,12 +123,13 @@ public class Spider implements Runnable, Task {
                 // 配置的节点状态不包含当前界面信息时, 不进行界面处理
                 return;
             }
-            PageResult pageResult = PageResult.of(request);
+            PageResult pageResult = new PageResult();
             pageProcessor.process(pageResult, page);
 
             // 3. 处理结果
             pipelinesRequest(pageResult);
         }catch (Exception e){
+            e.printStackTrace();
             logger.error("execute request error -> {}. Request Data -> [{}]", e.getMessage(), request);
         }finally {
             pageCount.incrementAndGet();
@@ -149,7 +153,6 @@ public class Spider implements Runnable, Task {
         if (!page.isDownloadSuccess()){
             // 下载失败 - 重试处理
             doCycleRetry(request);
-            return null;
         }
         return page;
     }
@@ -164,8 +167,8 @@ public class Spider implements Runnable, Task {
         boolean enabled = logger.isDebugEnabled();
 
         // 1. 添加孵化请求
-        if (CollectionUtils.isNotEmpty(pageResult.getExtractReqs())){
-            for (Request newRequest : pageResult.getExtractReqs()) {
+        if (CollectionUtils.isNotEmpty(pageResult.getHatchReqs())){
+            for (Request newRequest : pageResult.getHatchReqs()) {
                 if (enabled) {
                     logger.debug("补充请求信息 -> [{}]", newRequest.getUrl());
                 }
@@ -174,11 +177,10 @@ public class Spider implements Runnable, Task {
         }
 
         // 2. 处理结果信息
-        if (pageResult.getResultItems().isSkip()) {
-            logger.debug("isSkip->[ture]. 请求未跳过处理结果 -> [{}]", pageResult.getResultItems().getRequest().getUrl());
+        if (!pageResult.getSkip() || pageResult.getExtract() == null) {
             return;
         }
-        pipeline.process(pageResult.getResultItems(), this);
+        pipeline.process(pageResult.getExtract(), this);
     }
 
     private void sleep(int time) {
@@ -203,7 +205,7 @@ public class Spider implements Runnable, Task {
         }
         cycleTriedTimesObject++;
         logger.info("请求 -> [{}]. 重试次数 -> [{}]", request.getUrl(), cycleTriedTimesObject);
-        addRequest(SerializationUtils.clone(request).setPriority(0).putExtra(Request.CYCLE_TRIED_TIMES, cycleTriedTimesObject));
+        addRequest(SerializationUtils.clone(request).putExtra(Request.CYCLE_TRIED_TIMES, cycleTriedTimesObject));
         sleep(getSite().getRetrySleepTime());
     }
 

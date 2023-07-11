@@ -40,10 +40,10 @@ public class ThreadLocalQueueSchedulerTest {
 
                 int size = new Random().nextInt(20) + 1;
                 for (int j = 1; j <= size; j++){
-                    scheduler.push(new Request("" + j),null);
+//                    scheduler.push(new Request("" + j),null);
                 }
 
-                System.out.println((Thread.currentThread().getName() + ". 期望 -> {"+size+"}. 实际数值 -> {"+scheduler.getTotalRequestsCount(null)+"}"));
+                System.out.println((Thread.currentThread().getName() + ". 期望 -> {"+size+"}. 实际数值 -> {"+scheduler.getContext()+"}"));
             });
         }
 

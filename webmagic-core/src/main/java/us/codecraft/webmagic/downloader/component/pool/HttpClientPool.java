@@ -1,4 +1,4 @@
-package us.codecraft.webmagic.downloader;
+package us.codecraft.webmagic.downloader.component.pool;
 
 import lombok.Getter;
 import lombok.Setter;

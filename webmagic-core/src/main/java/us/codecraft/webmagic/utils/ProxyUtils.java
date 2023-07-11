@@ -2,7 +2,7 @@ package us.codecraft.webmagic.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import us.codecraft.webmagic.proxy.Proxy;
+import us.codecraft.webmagic.downloader.component.proxy.Proxy;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

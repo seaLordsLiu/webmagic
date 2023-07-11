@@ -9,6 +9,7 @@ import us.codecraft.webmagic.scheduler.component.HashSetDuplicateRemover;
 import us.codecraft.webmagic.utils.HttpConstant;
 
 /**
+ * 删除重复的网址，只推送不重复的网址
  * Remove duplicate urls and only push urls which are not duplicate.<br><br>
  *
  * @author code4crafer@gmail.com

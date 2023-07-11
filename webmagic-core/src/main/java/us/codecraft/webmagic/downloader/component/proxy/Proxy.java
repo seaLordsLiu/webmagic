@@ -1,4 +1,4 @@
-package us.codecraft.webmagic.proxy;
+package us.codecraft.webmagic.downloader.component.proxy;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;

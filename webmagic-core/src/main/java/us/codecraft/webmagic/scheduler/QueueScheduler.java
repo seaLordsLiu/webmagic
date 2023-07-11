@@ -18,7 +18,7 @@ import us.codecraft.webmagic.Task;
  * @author code4crafter@gmail.com <br>
  * @since 0.1.0
  */
-public class QueueScheduler extends DuplicateRemovedScheduler implements MonitorableScheduler {
+public class QueueScheduler extends DuplicateRemovedScheduler {
 
     private final BlockingQueue<Request> queue;
 
@@ -47,15 +47,5 @@ public class QueueScheduler extends DuplicateRemovedScheduler implements Monitor
     @Override
     public Request poll(Task task) {
         return queue.poll();
-    }
-
-    @Override
-    public int getLeftRequestsCount(Task task) {
-        return queue.size();
-    }
-
-    @Override
-    public int getTotalRequestsCount(Task task) {
-        return getDuplicateRemover().getTotalRequestsCount(task);
     }
 }
