@@ -1,19 +1,35 @@
 package us.codecraft.webmagic;
 
+import us.codecraft.webmagic.downloader.Downloader;
+import us.codecraft.webmagic.downloader.HttpClientDownloader;
 import us.codecraft.webmagic.pipeline.Pipeline;
+import us.codecraft.webmagic.processor.AnnotationsPageProcessor;
 import us.codecraft.webmagic.processor.PageProcessor;
+import us.codecraft.webmagic.scheduler.Scheduler;
+import us.codecraft.webmagic.scheduler.ThreadLocalQueueScheduler;
 
 /**
  * @author liu xw
  * @date 2023 07-03
  */
-public interface SpiderFactory {
+public class SpiderFactory {
 
     /**
-     * 普通的爬虫程序
-     * @param processor 界面解析器
+     * 下载处理器
      */
-    Spider getSpider(PageProcessor processor, Pipeline pipeline);
+    private static final Downloader DOWNLOADER = new HttpClientDownloader();
 
-    Spider getSpider(PageProcessor processor);
+    /**
+     * 消息调度器
+     */
+    private static final Scheduler SCHEDULER = new ThreadLocalQueueScheduler();
+
+    /**
+     * 注解处理器
+     */
+    private static final PageProcessor PROCESSOR = new AnnotationsPageProcessor();
+
+    public static Spider createSpider(Pipeline pipeline){
+        return new Spider(pipeline, DOWNLOADER, PROCESSOR, SCHEDULER);
+    }
 }

@@ -5,10 +5,7 @@ import org.junit.Test;
 import us.codecraft.webmagic.annotations.Extract;
 import us.codecraft.webmagic.annotations.ExtractUrl;
 import us.codecraft.webmagic.emus.ExtractTypeEnum;
-import us.codecraft.webmagic.processor.AnnotationsPageProcessor;
-
-import java.time.LocalDateTime;
-import java.util.List;
+import us.codecraft.webmagic.pipeline.ConsolePipeline;
 
 /**
  * @author liu xw
@@ -16,11 +13,10 @@ import java.util.List;
  */
 public class SpiderTest {
 
-    private SpiderFactory factory = new SpiderFactoryImpl();
 
     @Test
     public void db(){
-        Spider spider = factory.getSpider(new AnnotationsPageProcessor());
+        Spider spider = SpiderFactory.createSpider(new ConsolePipeline());
 
         // 豆瓣检索 支持按照书名称、isbn、作者进行查询
         spider.start("https://book.douban.com/j/subject_suggest?q=鲁迅", SpiderTest.DB.class);
@@ -43,12 +39,11 @@ public class SpiderTest {
     @Data
     @ExtractUrl(
         extract = @Extract(value = "$..url", type = ExtractTypeEnum.JSON),
-        modelClass = SpiderTest.BookDB.class
+        modelClass = SpiderTest.BookDB.class,
+        filterRegEx = "https://book.douban.com/subject/\\d+/"
     )
     public static class DB{
 
-//        @Extract(value = "$..url", type = ExtractTypeEnum.JSON)
-//        private List<String> urls;
     }
 
 

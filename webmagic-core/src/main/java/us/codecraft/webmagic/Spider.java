@@ -35,14 +35,14 @@ public class Spider implements Runnable, Task {
     protected Logger logger = LoggerFactory.getLogger(getClass());
 
     /**
-     * 核心组件 - 下载组件
-     */
-    protected final Downloader downloader;
-
-    /**
      * 核心组件 - 结果处理器
      */
     protected final Pipeline pipeline;
+
+    /**
+     * 核心组件 - 下载组件
+     */
+    protected final Downloader downloader;
 
     /**
      * 核心组件 - 界面解析器

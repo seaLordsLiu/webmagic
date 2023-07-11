@@ -1,16 +1,10 @@
 package us.codecraft.webmagic.processor;
 
-import com.alibaba.fastjson2.JSON;
-import org.apache.commons.lang3.StringUtils;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.PageResult;
 import us.codecraft.webmagic.annotations.component.ModelExtractParser;
-import us.codecraft.webmagic.annotations.component.ModelExtractParser2;
-import us.codecraft.webmagic.annotations.metadata.FieldMetadata;
 import us.codecraft.webmagic.annotations.metadata.MetadataContext;
 import us.codecraft.webmagic.annotations.MetadataContextFactory;
-
-import java.util.Objects;
 
 /**
  * 界面提取解析管理中心
@@ -27,11 +21,11 @@ public class AnnotationsPageProcessor implements PageProcessor{
     /**
      * 解析字段的
      */
-    private final ModelExtractParser2 fieldExtractParser;
+    private final ModelExtractParser fieldExtractParser;
 
     public AnnotationsPageProcessor() {
         this.metadataContextFactory = new MetadataContextFactory();
-        this.fieldExtractParser = new ModelExtractParser2();
+        this.fieldExtractParser = new ModelExtractParser();
     }
 
     @Override
