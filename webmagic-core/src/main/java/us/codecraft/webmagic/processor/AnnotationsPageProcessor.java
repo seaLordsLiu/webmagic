@@ -33,9 +33,7 @@ public class AnnotationsPageProcessor implements PageProcessor{
         // 1. 获取到类元数据信息
         MetadataContext context = metadataContextFactory.getMetadataContext(page.getRequest().getExtractClazz());
 
-        PageResult parser = (PageResult) fieldExtractParser.parser(context.metadataOnClass(), page);
-
-        result.setHatchReqs(parser.getHatchReqs());
-        result.setExtract(parser.getExtract());
+        // 映射结果集
+        fieldExtractParser.parser(context.metadataOnClass(), page, result);
     }
 }

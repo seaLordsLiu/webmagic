@@ -78,6 +78,11 @@ public class Spider implements Runnable, Task {
     private Site site;
 
     /**
+     * 执行 - 唯一标识
+     */
+    private String trance;
+
+    /**
      * 执行状态
      */
     protected AtomicInteger stat = new AtomicInteger(SpiderConstants.STAT_INIT);;
@@ -92,19 +97,24 @@ public class Spider implements Runnable, Task {
      */
     @Override
     public void run() {
-        stat.set(SpiderConstants.STAT_RUNNING);
-        Request request = this.scheduler.poll(this);
-        while (SpiderConstants.STAT_RUNNING == stat.get() && request != null){
+        try {
+            stat.set(SpiderConstants.STAT_RUNNING);
+            Request request = this.scheduler.poll(this);
+            while (SpiderConstants.STAT_RUNNING == stat.get() && request != null){
+                // 执行任务
+                executeRequest(request);
 
-            // 执行任务
-            executeRequest(request);
-
-            // 执行完成获取下一个任务信息
-            request = this.scheduler.poll(this);
-
+                // 执行完成获取下一个任务信息
+                request = this.scheduler.poll(this);
+            }
+        }finally {
+            // 执行完成 - 设置执行状态为停止
+            stat.set(SpiderConstants.STAT_STOPPED);
+            // 清理缓存信息
+            SpiderFactory.cloneSpider(getUUID());
+            // 清理线程上下文信息
+            ThreadLocalQueueScheduler.clearContext();
         }
-        // 停止
-        stat.set(SpiderConstants.STAT_STOPPED);
 
         logger.info("Spider {} closed! {} pages downloaded.", getUUID(), pageCount.get());
     }
@@ -161,9 +171,6 @@ public class Spider implements Runnable, Task {
      * 处理结果信息
      */
     private void pipelinesRequest(PageResult pageResult){
-        if (pageResult == null){
-            return;
-        }
         boolean enabled = logger.isDebugEnabled();
 
         // 1. 添加孵化请求
@@ -218,7 +225,10 @@ public class Spider implements Runnable, Task {
 
     @Override
     public String getUUID() {
-        return UUID.randomUUID().toString();
+        if (this.trance == null){
+            this.trance = UUID.randomUUID().toString();
+        }
+        return this.trance;
     }
 
     @Override

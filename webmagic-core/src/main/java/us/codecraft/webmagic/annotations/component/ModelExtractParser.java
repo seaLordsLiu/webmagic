@@ -30,9 +30,7 @@ import java.util.stream.Collectors;
 public class ModelExtractParser implements ExtractParser<ClassMetadata> {
 
     @Override
-    public Object parser(ClassMetadata metadata, Page page) {
-        PageResult result = new PageResult();
-
+    public void parser(ClassMetadata metadata, Page page, PageResult result) {
         // 解析类属性信息
         List<ExtractUrl> extractUrlList = new ArrayList<>();
 
@@ -75,8 +73,6 @@ public class ModelExtractParser implements ExtractParser<ClassMetadata> {
             }
         }
         result.setExtract(Objects.isNull(metadataContextObject) ? null : JSON.toJSONString(metadataContextObject));
-
-        return result;
     }
 
     /**

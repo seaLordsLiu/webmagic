@@ -1,6 +1,7 @@
 package us.codecraft.webmagic.annotations.component;
 
 import us.codecraft.webmagic.Page;
+import us.codecraft.webmagic.PageResult;
 import us.codecraft.webmagic.annotations.metadata.annotation.AnnotationMetadata;
 
 /**
@@ -17,5 +18,5 @@ public interface ExtractParser<T extends AnnotationMetadata> {
      * @param metadata 字段元数据信息
      * @param page     页面信息
      */
-    Object parser(T metadata, Page page);
+    void parser(T metadata, Page page, PageResult result);
 }

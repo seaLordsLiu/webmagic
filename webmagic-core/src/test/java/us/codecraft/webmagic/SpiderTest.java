@@ -50,22 +50,22 @@ public class SpiderTest {
     @Data
     public static class BookDB{
 
-        /**
-         * 标签
-         */
-        @Extract(value = "//head/meta[@property='og:title']/@content", type = ExtractTypeEnum.HTML)
-        private String title;
+            /**
+             * 标签
+             */
+            @Extract(value = "//head/meta[@property='og:title']/@content", type = ExtractTypeEnum.HTML)
+            private String title;
 
-        /**
-         * 简介
-         */
-        @Extract(value = "//head/meta[@property='og:description']/@content", type = ExtractTypeEnum.HTML)
-        private String description;
+            /**
+             * 简介
+             */
+            @Extract(value = "//head/meta[@property='og:description']/@content", type = ExtractTypeEnum.HTML)
+            private String description;
 
-        /**
-         * 时间
-         */
-        @Extract(value = "//div[@id='info']/span[contains(:text:one,'出版年:')]/followingSiblingText()")
-        private String date;
+            /**
+             * 时间
+             */
+            @Extract(value = "//div[@id='info']/span[contains(:text:one,'出版年:')]/followingSiblingText()")
+            private String date;
     }
 }
