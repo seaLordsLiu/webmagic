@@ -3,6 +3,7 @@ package us.codecraft.webmagic.scheduler;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Task;
 import us.codecraft.webmagic.scheduler.component.DuplicateRemover;
+import us.codecraft.webmagic.scheduler.component.MonitorableScheduler;
 
 /**
  * 当前端指定数据采集时，使用该调度器
@@ -11,7 +12,7 @@ import us.codecraft.webmagic.scheduler.component.DuplicateRemover;
  * @author liu xw
  * @date 2023 07-03
  */
-public class ThreadLocalQueueScheduler extends DuplicateRemovedScheduler {
+public class ThreadLocalQueueScheduler extends DuplicateRemovedScheduler implements MonitorableScheduler {
 
     private static final ThreadLocal<QueueScheduler> threadLocalContextQueue = new InheritableThreadLocal<>();
 
@@ -72,5 +73,20 @@ public class ThreadLocalQueueScheduler extends DuplicateRemovedScheduler {
 
     private QueueScheduler createEmptyContext(){
         return new QueueScheduler(MAX_QUEUE_SIZE);
+    }
+
+    @Override
+    public boolean isEmpty(Task task) {
+        return this.getContext().isEmpty(task);
+    }
+
+    @Override
+    public int totalCount(Task task) {
+        return this.getContext().totalCount(task);
+    }
+
+    @Override
+    public int leftCount(Task task) {
+        return this.getContext().leftCount(task);
     }
 }

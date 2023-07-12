@@ -1,5 +1,6 @@
 package us.codecraft.webmagic;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.SerializationUtils;
@@ -52,6 +53,7 @@ public class Spider implements Runnable, Task {
     /**
      * 核心组件 - 消息调度器
      */
+    @Getter
     protected final Scheduler scheduler;
 
 

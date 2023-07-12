@@ -6,6 +6,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Task;
+import us.codecraft.webmagic.scheduler.component.MonitorableScheduler;
 
 /**
  * Basic Scheduler implementation.<br>
@@ -18,7 +19,7 @@ import us.codecraft.webmagic.Task;
  * @author code4crafter@gmail.com <br>
  * @since 0.1.0
  */
-public class QueueScheduler extends DuplicateRemovedScheduler {
+public class QueueScheduler extends DuplicateRemovedScheduler implements MonitorableScheduler {
 
     private final BlockingQueue<Request> queue;
 
@@ -47,5 +48,20 @@ public class QueueScheduler extends DuplicateRemovedScheduler {
     @Override
     public Request poll(Task task) {
         return queue.poll();
+    }
+
+    @Override
+    public boolean isEmpty(Task task) {
+        return leftCount(task) == 0;
+    }
+
+    @Override
+    public int totalCount(Task task) {
+        return getDuplicateRemover().getTotalRequestsCount(task);
+    }
+
+    @Override
+    public int leftCount(Task task) {
+        return queue.size();
     }
 }
