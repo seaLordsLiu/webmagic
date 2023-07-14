@@ -16,10 +16,11 @@ public class SpiderTest {
 
     @Test
     public void db(){
-        Spider spider = SpiderFactory.createSpider(new ConsolePipeline());
-
-        // 豆瓣检索 支持按照书名称、isbn、作者进行查询
-        spider.start("https://book.douban.com/j/subject_suggest?q=鲁迅", SpiderTest.DB.class);
+        for (int i = 0; i < 10; i++){
+            Spider spider = SpiderFactory.createSpider(new ConsolePipeline());
+            // 豆瓣检索 支持按照书名称、isbn、作者进行查询
+            spider.start("https://book.douban.com/j/subject_suggest?q=鲁迅", SpiderTest.DB.class);
+        }
     }
 
 

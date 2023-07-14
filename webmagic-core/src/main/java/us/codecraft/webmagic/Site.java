@@ -26,19 +26,38 @@ public class Site {
 
     private Map<String, Map<String, String>> cookies = new HashMap<String, Map<String, String>>();
 
+    /**
+     * 字符集
+     */
     private String charset;
 
     private String defaultCharset;
 
-    private int sleepTime = 5000;
+    /**
+     * 每次间隔请求间隔时间
+     */
+    private int sleepTime = 10;
 
+    /**
+     * 重试次数 - 配置 HttpClient Request 次数
+     */
     private int retryTimes = 0;
 
-    private int cycleRetryTimes = 0;
+    /**
+     * 重试次数 - 配置 site.request 的重试次数
+     */
+    private int cycleRetryTimes = 1;
 
-    private int retrySleepTime = 1000;
 
-    private int timeOut = 5000;
+    /**
+     * 重试间隔时间 和cycleRetryTimes配套使用
+     */
+    private int retrySleepTime = 100;
+
+    /**
+     * 请求超时时间
+     */
+    private int timeOut = 1000;
 
     private static final Set<Integer> DEFAULT_STATUS_CODE_SET = new HashSet<Integer>();
 

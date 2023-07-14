@@ -36,14 +36,16 @@ public class SpiderFactory {
      * 创建
      * 补充消费 spiderConsumer 可以用来设置参数
      */
-    public static Spider createSpider(Pipeline pipeline, Consumer<Spider> spiderConsumer){
-        final Spider spider = new Spider(pipeline, Component.DOWNLOADER, Component.PROCESSOR, Component.SCHEDULER);
-        if (spiderConsumer != null){
-            spiderConsumer.accept(spider);
+    public static Spider createSpider(Pipeline pipeline, Consumer<Site> siteConsumer){
+        final Spider spider = new Spider(pipeline);
+        if (siteConsumer != null){
+            siteConsumer.accept(spider.getSite());
         }
         SPIDER_CACHE.put(spider.getUUID(), spider);
         return spider;
     }
+
+
 
     public static void cloneSpider(String trance){
         SPIDER_CACHE.remove(trance);
@@ -53,23 +55,5 @@ public class SpiderFactory {
         return SPIDER_CACHE.getOrDefault(trance, null);
     }
 
-    /**
-     * 存放组件信息
-     */
-    public static class Component{
-        /**
-         * 下载处理器
-         */
-        public static final Downloader DOWNLOADER = new HttpClientDownloader();
 
-        /**
-         * 消息调度器
-         */
-        public static final Scheduler SCHEDULER = new ThreadLocalQueueScheduler();
-
-        /**
-         * 注解处理器
-         */
-        public static final PageProcessor PROCESSOR = new AnnotationsPageProcessor();
-    }
 }

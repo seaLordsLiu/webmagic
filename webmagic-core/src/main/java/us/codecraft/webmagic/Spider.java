@@ -2,23 +2,33 @@ package us.codecraft.webmagic;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import us.codecraft.webmagic.constants.SpiderConstants;
 import us.codecraft.webmagic.downloader.Downloader;
+import us.codecraft.webmagic.downloader.HttpClientDownloader;
 import us.codecraft.webmagic.pipeline.Pipeline;
+import us.codecraft.webmagic.processor.AnnotationsPageProcessor;
 import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.scheduler.Scheduler;
 import us.codecraft.webmagic.scheduler.ThreadLocalQueueScheduler;
+import us.codecraft.webmagic.thread.CountableThreadPool;
 import us.codecraft.webmagic.utils.UrlUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * 爬虫程序核心执行器
@@ -43,35 +53,33 @@ public class Spider implements Runnable, Task {
     /**
      * 核心组件 - 下载组件
      */
-    protected final Downloader downloader;
+    @Getter
+    @Setter
+    protected  Downloader downloader = new HttpClientDownloader();
 
     /**
      * 核心组件 - 界面解析器
      */
-    protected final PageProcessor pageProcessor;
+    @Getter
+    @Setter
+    protected PageProcessor pageProcessor = new AnnotationsPageProcessor();
 
     /**
      * 核心组件 - 消息调度器
      */
     @Getter
-    protected final Scheduler scheduler;
+    @Setter
+    protected Scheduler scheduler = new ThreadLocalQueueScheduler();
+
+    /**
+     * 入口请求
+     */
+    private Request entranceRequest;
 
 
     public void start(String url, Class<?> modelClass){
-        Request request = new Request(url, modelClass);
-        this.addRequest(request);
-        try {
-            this.run();
-        }finally {
-            ThreadLocalQueueScheduler.clearContext();
-        }
-    }
-
-    public void startAsync(String url, Class<?> modelClass){
-        Request request = new Request(url, modelClass);
-        this.addRequest(request);
-        CompletableFuture<Void> future = CompletableFuture.runAsync(this);
-        future.thenRun(ThreadLocalQueueScheduler::clearContext);
+        entranceRequest = new Request(url, modelClass);
+        this.run();
     }
 
     /**
@@ -97,17 +105,58 @@ public class Spider implements Runnable, Task {
     /**
      * 执行任务信息
      */
+    @Setter
+    private CountableThreadPool threadPool = null;
+    /**
+     * 初始化程序
+     */
+    private void init(){
+        // 初始化 - 执行任务
+        stat.set(SpiderConstants.STAT_RUNNING);
+        if (threadPool == null){
+            threadPool = new CountableThreadPool(1);
+        }
+
+        // 补充入口请求信息
+        this.addRequest(entranceRequest);
+    };
+
+    /**
+     * 执行任务信息
+     */
     @Override
     public void run() {
+        init();
         try {
-            stat.set(SpiderConstants.STAT_RUNNING);
-            Request request = this.scheduler.poll(this);
-            while (SpiderConstants.STAT_RUNNING == stat.get() && request != null){
-                // 执行任务
-                executeRequest(request);
-
-                // 执行完成获取下一个任务信息
-                request = this.scheduler.poll(this);
+            // 获取一个 使用线程处理 request 请求任务. 每获取到一个非空的 request 时. 就会执行一个线程去运行
+            while (SpiderConstants.STAT_RUNNING == stat.get()){
+                Request request = getScheduler().poll(this);
+                // 获取请求为null. 判断程序是否执行完成
+                if (request == null){
+                    // 判断存活线程数是否为0
+                    if (threadPool.getThreadAlive() == 0){
+                        // 二次确认请求
+                        request = getScheduler().poll(this);
+                        if (request == null){
+                            // 任务执行完成. 中断程序
+                            break;
+                        }
+                        // request 二次检测不为空. 去执行任务
+                    }else {
+                        // 存活线程数不为0. 其他任务还在执行, 直接中断当前执行线程
+                        continue;
+                    }
+                }
+                // 执行请求
+                final Request executeRequest = request;
+                threadPool.execute(() -> {
+                    try {
+                        // 执行任务
+                        executeRequest(executeRequest);
+                    }finally {
+                        pageCount.incrementAndGet();
+                    }
+                });
             }
         }finally {
             // 执行完成 - 设置执行状态为停止
@@ -117,7 +166,6 @@ public class Spider implements Runnable, Task {
             // 清理线程上下文信息
             ThreadLocalQueueScheduler.clearContext();
         }
-
         logger.info("Spider {} closed! {} pages downloaded.", getUUID(), pageCount.get());
     }
 
@@ -131,25 +179,25 @@ public class Spider implements Runnable, Task {
             Page page = downloaderRequest(request);
 
             // 2. 解析界面信息
-            if (!getSite().getAcceptStatCode().contains(page.getStatusCode())) {
+            if (page == null || !getSite().getAcceptStatCode().contains(page.getStatusCode())) {
                 // 配置的节点状态不包含当前界面信息时, 不进行界面处理
                 return;
             }
+
             PageResult pageResult = new PageResult();
             pageProcessor.process(pageResult, page);
 
             // 3. 处理结果
             pipelinesRequest(pageResult);
         }catch (Exception e){
-            e.printStackTrace();
-            logger.error("execute request error -> {}. Request Data -> [{}]", e.getMessage(), request);
+            // 中断请求
+            logger.error("execute request error Request -> [{}]", request, e);
         }finally {
             pageCount.incrementAndGet();
             // 执行间隔
             sleep(getSite().getSleepTime());
         }
     }
-
 
     /**
      * 执行 downloader 下载任务
@@ -162,9 +210,10 @@ public class Spider implements Runnable, Task {
         }else {
             page = downloader.download(request, this);
         }
-        if (!page.isDownloadSuccess()){
-            // 下载失败 - 重试处理
+        if (!page.isDownloadSuccess() || page.getHtml().getDocument() == null){
+            // 下载失败 - 重试处理 || 下载html. document节点失败 重试
             doCycleRetry(request);
+            return null;
         }
         return page;
     }
