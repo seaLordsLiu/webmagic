@@ -74,6 +74,7 @@ public class Spider implements Runnable, Task {
     /**
      * 入口请求
      */
+    @Setter
     private Request entranceRequest;
 
 

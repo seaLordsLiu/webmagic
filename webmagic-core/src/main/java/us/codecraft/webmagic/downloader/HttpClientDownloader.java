@@ -14,6 +14,7 @@ import us.codecraft.webmagic.Task;
 import us.codecraft.webmagic.downloader.component.pool.HttpClientPool;
 import us.codecraft.webmagic.downloader.component.proxy.Proxy;
 import us.codecraft.webmagic.downloader.component.proxy.ProxyProvider;
+import us.codecraft.webmagic.downloader.component.proxy.SimpleProxyProvider;
 import us.codecraft.webmagic.selector.PlainText;
 import us.codecraft.webmagic.utils.CharsetUtils;
 import us.codecraft.webmagic.utils.HttpClientUtils;
@@ -42,7 +43,7 @@ public class HttpClientDownloader implements Downloader {
     /**
      * 代理信息
      */
-    private ProxyProvider proxyProvider;
+    private ProxyProvider proxyProvider = SimpleProxyProvider.from(new Proxy("223.241.118.100", 1133));;
 
     public void setProxyProvider(ProxyProvider proxyProvider) {
         this.proxyProvider = proxyProvider;
@@ -65,7 +66,7 @@ public class HttpClientDownloader implements Downloader {
         CloseableHttpResponse httpResponse = null;
         CloseableHttpClient httpClient = clientPool.getHttpClient(task.getSite());
 
-        Proxy proxy = proxyProvider != null ? proxyProvider.getProxy(task) : null;
+        Proxy proxy = proxyProvider != null ? proxyProvider.getProxy(request, task) : null;
 
         // 构造请求对象
         HttpClientRequestContext requestContext = httpUriRequestConverter.convert(request, task.getSite(), proxy);
