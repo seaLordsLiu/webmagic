@@ -1,6 +1,7 @@
 package us.codecraft.webmagic;
 
 import lombok.Getter;
+import lombok.Setter;
 import us.codecraft.webmagic.downloader.Downloader;
 import us.codecraft.webmagic.downloader.HttpClientDownloader;
 import us.codecraft.webmagic.pipeline.Pipeline;
@@ -56,4 +57,24 @@ public class SpiderFactory {
     }
 
 
+    /**
+     * 组件信息
+     */
+    public static class component{
+
+        /**
+         * 核心组件 - 下载组件
+         */
+        public static Downloader downloader = new HttpClientDownloader();
+
+        /**
+         * 核心组件 - 界面解析器
+         */
+        public static PageProcessor pageProcessor = new AnnotationsPageProcessor();
+
+        /**
+         * 核心组件 - 消息调度器
+         */
+        public static Scheduler scheduler = new ThreadLocalQueueScheduler();
+    }
 }

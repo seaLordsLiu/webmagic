@@ -55,21 +55,21 @@ public class Spider implements Runnable, Task {
      */
     @Getter
     @Setter
-    protected  Downloader downloader = new HttpClientDownloader();
+    protected  Downloader downloader = SpiderFactory.component.downloader;
 
     /**
      * 核心组件 - 界面解析器
      */
     @Getter
     @Setter
-    protected PageProcessor pageProcessor = new AnnotationsPageProcessor();
+    protected PageProcessor pageProcessor = SpiderFactory.component.pageProcessor;
 
     /**
      * 核心组件 - 消息调度器
      */
     @Getter
     @Setter
-    protected Scheduler scheduler = new ThreadLocalQueueScheduler();
+    protected Scheduler scheduler = SpiderFactory.component.scheduler;
 
     /**
      * 入口请求
