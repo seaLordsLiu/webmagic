@@ -78,26 +78,30 @@ public class HttpClientPool {
      * 心跳检测
      */
     private void httpClientHeartbeat() {
-        final long executeTime = LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond();
-        if (httpClientCache.isEmpty()){
-            return;
-        }
-        final boolean debugEnabled = log.isDebugEnabled();
-
-        httpClientCache.forEach((key, clientWrapper) -> {
-            if (executeTime > clientWrapper.getLastAccessTime() + 5 * 60) {
-                // 超过5分钟没有操作
-                httpClientCache.remove(key);
-                try {
-                    if (debugEnabled){
-                        log.debug("close domain -> {}. last access time -> {}",key, LocalDateTime.ofInstant(Instant.ofEpochMilli(clientWrapper.getLastAccessTime()), ZoneId.systemDefault()));
-                    }
-                    clientWrapper.getHttpClient().close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+        try {
+            final long executeTime = LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond();
+            if (httpClientCache.isEmpty()){
+                return;
             }
-        });
+            final boolean debugEnabled = log.isDebugEnabled();
+            httpClientCache.forEach((key, clientWrapper) -> {
+                if (executeTime > clientWrapper.getLastAccessTime() + 5 * 60) {
+                    try {
+                        // 超过5分钟没有操作
+                        httpClientCache.remove(key, clientWrapper);
+                        if (debugEnabled){
+                            log.debug("close domain -> {}. last access time -> {}",key, LocalDateTime.ofInstant(Instant.ofEpochMilli(clientWrapper.getLastAccessTime()), ZoneId.systemDefault()));
+                        }
+                        // 调用close方法会导致连接池关闭
+//                        clientWrapper.getHttpClient().close();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        }finally {
+            executorService.schedule(this::httpClientHeartbeat, 2, TimeUnit.MINUTES);
+        }
     }
 
     /**
