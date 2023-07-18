@@ -36,7 +36,7 @@ public class Site {
     /**
      * 每次间隔请求间隔时间
      */
-    private int sleepTime = 1000;
+    private int sleepTime = 500;
 
     /**
      * 重试次数 - 配置 HttpClient Request 次数
@@ -57,7 +57,7 @@ public class Site {
     /**
      * 请求超时时间
      */
-    private int timeOut = 1000;
+    private int timeOut = 3000;
 
     private static final Set<Integer> DEFAULT_STATUS_CODE_SET = new HashSet<Integer>();
 

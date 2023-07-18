@@ -3,10 +3,9 @@ package us.codecraft.webmagic;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.SerializationUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import us.codecraft.webmagic.constants.SpiderConstants;
 import us.codecraft.webmagic.downloader.Downloader;
 import us.codecraft.webmagic.pipeline.Pipeline;
@@ -14,8 +13,13 @@ import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.scheduler.Scheduler;
 import us.codecraft.webmagic.scheduler.ThreadLocalQueueScheduler;
 import us.codecraft.webmagic.thread.CountableThreadPool;
+import us.codecraft.webmagic.utils.HttpConstant;
 import us.codecraft.webmagic.utils.UrlUtils;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,10 +35,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author liu xw
  * @date 2023 07-03
  */
+@Slf4j(topic = "spider")
 @RequiredArgsConstructor
 public class Spider implements Runnable, Task {
-
-    protected Logger logger = LoggerFactory.getLogger(getClass());
 
     /**
      * 核心组件 - 结果处理器
@@ -120,36 +123,65 @@ public class Spider implements Runnable, Task {
      */
     @Override
     public void run() {
+        final boolean enabled = log.isDebugEnabled();
+        log.info("[{}] -> 开启执行任务. 入口地址: [{}]", this.getUUID(), entranceRequest.getUrl());
+        final LocalDateTime startTime = LocalDateTime.now();
         init();
         try {
             // 获取一个 使用线程处理 request 请求任务. 每获取到一个非空的 request 时. 就会执行一个线程去运行
             while (SpiderConstants.STAT_RUNNING == stat.get()){
-
                 Request request = getScheduler().poll(this);
                 // 获取请求为null. 判断程序是否执行完成
                 if (request == null){
+                    if (enabled){
+                        log.debug("[{}] -> 队列任务为空, 开启关闭检测.", getUUID());
+                    }
                     // 判断存活线程数是否为0
                     if (threadPool.getThreadAlive() == 0){
                         // 二次确认请求
                         request = getScheduler().poll(this);
                         if (request == null){
+                            if (enabled){
+                                log.debug("[{}] -> 队列任务为空, 采集线程数数为0, 关闭采集任务. ", getUUID());
+                            }
                             // 任务执行完成. 中断程序
                             break;
                         }
                         // request 二次检测不为空. 去执行任务
                     }else {
                         // 存活线程数不为0. 其他任务还在执行, 直接中断当前执行线程
+                        if (enabled){
+                            log.debug("[{}] -> 队列任务为空, 存在执行采集线程", getUUID());
+                        }
                         continue;
                     }
                 }
                 // 执行请求
                 final Request executeRequest = request;
                 threadPool.execute(() -> {
+                    // 计数
+                    pageCount.incrementAndGet();
+
+                    // 记录执行时间
+                    Instant startInstant = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant();
                     try {
+                        if (executeRequest.getMethod() == null){
+                            // 默认GET
+                            executeRequest.setMethod(HttpConstant.Method.GET);
+                        }
                         // 执行任务
+                        log.info("[{}] -> 执行任务 method: [{}]. url: [{}]", getUUID(), executeRequest.getMethod(), executeRequest.getUrl());
                         executeRequest(executeRequest);
+                    }catch (Exception e){
+                        log.error("[{}] -> 采集任务执行失败 method: [{}]. url: [{}]", getUUID(), executeRequest.getMethod(), executeRequest.getUrl(),e);
                     }finally {
                         // 执行间隔
+                        log.info("[{}] -> 执行完成 url: [{}]. 执行时间: [{}]毫秒. 线程休眠: [{}]毫秒",
+                                getUUID(),
+                                executeRequest.getUrl(),
+                                Duration.between(startInstant, LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()).toMillis(),
+                                getSite().getSleepTime()
+                        );
                         sleep(getSite().getSleepTime());
                     }
                 });
@@ -157,7 +189,7 @@ public class Spider implements Runnable, Task {
         }finally {
             destroy();
         }
-        logger.info("Spider {} closed! {} pages downloaded.", getUUID(), pageCount.get());
+        log.info("[{}] -> 任务执行完毕. 执行时间: [{}]秒. 下载界面数量: [{}]", getUUID(), Duration.between(startTime, LocalDateTime.now()).getSeconds(), pageCount.get());
     }
 
     protected void destroy(){
@@ -175,27 +207,23 @@ public class Spider implements Runnable, Task {
      * 执行任务
      */
     private void executeRequest(Request request) {
-        logger.info("execute -> [{}-{}]", request.getMethod(), request.getUrl());
-        pageCount.incrementAndGet();
-        try {
-            // 1. 下载界面信息
-            Page page = downloaderRequest(request);
 
-            // 2. 解析界面信息
-            if (page == null || !getSite().getAcceptStatCode().contains(page.getStatusCode())) {
-                // 配置的节点状态不包含当前界面信息时, 不进行界面处理
-                return;
-            }
+        // 1. 下载界面信息
+        Page page = downloaderRequest(request);
 
-            PageResult pageResult = new PageResult();
-            pageProcessor.process(pageResult, page);
-
-            // 3. 处理结果
-            pipelinesRequest(pageResult);
-        }catch (Exception e){
-            // 中断请求
-            logger.error("execute request error Request -> [{}]", request, e);
+        // 过滤 状态码信息
+        if (!getSite().getAcceptStatCode().contains(page.getStatusCode())) {
+            // 配置的节点状态不包含当前界面信息时, 不进行界面处理
+            return;
         }
+
+        // 2. 开始解析数据信息
+        PageResult pageResult = new PageResult();
+        pageProcessor.process(pageResult, page);
+
+
+        // 3. 处理结果
+        pipelinesRequest(pageResult);
     }
 
     /**
@@ -209,10 +237,14 @@ public class Spider implements Runnable, Task {
         }else {
             page = downloader.download(request, this);
         }
-        if (!page.isDownloadSuccess() || page.getHtml().getDocument() == null){
+        if (!page.isDownloadSuccess()){
             // 下载失败 - 重试处理 || 下载html. document节点失败 重试
+            log.error("[{}] -> 下载失败 url: [{}]", getUUID(), request.getUrl());
             doCycleRetry(request);
-            return null;
+        }
+        if (page.getHtml().getDocument() == null){
+            log.error("[{}] -> 界面 (Document is null) 信息下载失败. url: [{}]", getUUID(), request.getUrl());
+            doCycleRetry(request);
         }
         return page;
     }
@@ -221,13 +253,12 @@ public class Spider implements Runnable, Task {
      * 处理结果信息
      */
     private void pipelinesRequest(PageResult pageResult){
-        boolean enabled = logger.isDebugEnabled();
-
+        boolean enabled = log.isDebugEnabled();
         // 1. 添加孵化请求
         if (CollectionUtils.isNotEmpty(pageResult.getHatchReqs())){
             for (Request newRequest : pageResult.getHatchReqs()) {
                 if (enabled) {
-                    logger.debug("补充请求信息 -> [{}]", newRequest.getUrl());
+                    log.debug("[{}] -> 孵化子请求信息. 请求地址 url: [{}]. 解析类 extractClazz: [{}]", getUUID(), newRequest.getUrl(), newRequest.getExtractClazz().getName());
                 }
                 this.scheduler.push(newRequest, this);
             }
@@ -244,7 +275,6 @@ public class Spider implements Runnable, Task {
         try {
             Thread.sleep(time);
         } catch (InterruptedException e) {
-            logger.error("Thread interrupted when sleep",e);
             Thread.currentThread().interrupt();
         }
     }
@@ -257,10 +287,10 @@ public class Spider implements Runnable, Task {
         Integer cycleTriedTimesObject = Optional.ofNullable(request.getExtra(Request.CYCLE_TRIED_TIMES)).map(obj -> (Integer) obj).orElse(1);
         if (cycleTriedTimesObject > getSite().getCycleRetryTimes()){
             // 重试次数超过配置的重试次数
-            logger.warn("请求 -> [{}]. 超过配置的重试次数 -> [{}]", request.getUrl(), cycleTriedTimesObject);
+            log.error("请求 -> [{}]. 超过配置的重试次数 -> [{}]. 中断请求", request.getUrl(), cycleTriedTimesObject);
             return;
         }
-        logger.info("请求 -> [{}]. 重试次数 -> [{}]", request.getUrl(), cycleTriedTimesObject++);
+        log.debug("请求 -> [{}]. 重试次数 -> [{}]", request.getUrl(), cycleTriedTimesObject++);
         addRequest(SerializationUtils.clone(request).putExtra(Request.CYCLE_TRIED_TIMES, cycleTriedTimesObject));
     }
 

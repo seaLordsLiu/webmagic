@@ -11,6 +11,7 @@ import us.codecraft.webmagic.PageResult;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.annotations.Extract;
 import us.codecraft.webmagic.annotations.ExtractUrl;
+import us.codecraft.webmagic.annotations.ExtractUrls;
 import us.codecraft.webmagic.annotations.component.format.ExtractFormat;
 import us.codecraft.webmagic.annotations.metadata.ClassMetadata;
 import us.codecraft.webmagic.annotations.metadata.FieldMetadata;
@@ -42,6 +43,11 @@ public class ModelExtractParser implements ExtractParser<ClassMetadata> {
         if (metadata.hasAnnotation(ExtractUrl.class.getName())) {
             // TODO 因为抓的URL对应的不可能是一个实体类. 所以配置了多个
             extractUrlList.add(metadata.getAnnotation(ExtractUrl.class));
+        }
+
+        if (metadata.hasAnnotation(ExtractUrls.class.getName())){
+            ExtractUrl[] extract = metadata.getAnnotation(ExtractUrls.class).urls();
+            extractUrlList.addAll(Arrays.asList(extract));
         }
 
 

@@ -2,6 +2,7 @@ package us.codecraft.webmagic;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import us.codecraft.webmagic.downloader.Downloader;
 import us.codecraft.webmagic.downloader.HttpClientDownloader;
 import us.codecraft.webmagic.pipeline.Pipeline;
@@ -19,6 +20,7 @@ import java.util.function.Function;
  * @author liu xw
  * @date 2023 07-03
  */
+@Slf4j(topic = "spiderFactory")
 public class SpiderFactory {
 
     /**
@@ -42,6 +44,7 @@ public class SpiderFactory {
         if (siteConsumer != null){
             siteConsumer.accept(spider.getSite());
         }
+        log.info("创建采集任务, 任务追踪 traceId: [{}]. 任务配置信息 site: [{}]", spider.getUUID(), spider.getSite());
         SPIDER_CACHE.put(spider.getUUID(), spider);
         return spider;
     }
@@ -49,7 +52,7 @@ public class SpiderFactory {
 
 
     public static void cloneSpider(String trance){
-        SPIDER_CACHE.remove(trance);
+        log.info("关闭采集任务, traceId: [{}] reslut: [{}]", trance, SPIDER_CACHE.remove(trance));
     }
 
     public static Spider getSpider(String trance){
