@@ -36,7 +36,7 @@ public class Site {
     /**
      * 每次间隔请求间隔时间
      */
-    private int sleepTime = 10;
+    private int sleepTime = 1000;
 
     /**
      * 重试次数 - 配置 HttpClient Request 次数

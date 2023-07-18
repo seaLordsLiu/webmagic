@@ -9,26 +9,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import us.codecraft.webmagic.constants.SpiderConstants;
 import us.codecraft.webmagic.downloader.Downloader;
-import us.codecraft.webmagic.downloader.HttpClientDownloader;
 import us.codecraft.webmagic.pipeline.Pipeline;
-import us.codecraft.webmagic.processor.AnnotationsPageProcessor;
 import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.scheduler.Scheduler;
 import us.codecraft.webmagic.scheduler.ThreadLocalQueueScheduler;
 import us.codecraft.webmagic.thread.CountableThreadPool;
 import us.codecraft.webmagic.utils.UrlUtils;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * 爬虫程序核心执行器
@@ -77,7 +68,6 @@ public class Spider implements Runnable, Task {
     @Setter
     private Request entranceRequest;
 
-
     public void start(String url, Class<?> modelClass){
         entranceRequest = new Request(url, modelClass);
         this.run();
@@ -101,13 +91,14 @@ public class Spider implements Runnable, Task {
     /**
      * 执行次数
      */
-    private final AtomicLong pageCount = new AtomicLong(0);;
+    private final AtomicLong pageCount = new AtomicLong(0);
 
     /**
      * 执行任务信息
      */
     @Setter
     private CountableThreadPool threadPool = null;
+
     /**
      * 初始化程序
      */
@@ -122,6 +113,8 @@ public class Spider implements Runnable, Task {
         this.addRequest(entranceRequest);
     };
 
+
+
     /**
      * 执行任务信息
      */
@@ -131,6 +124,7 @@ public class Spider implements Runnable, Task {
         try {
             // 获取一个 使用线程处理 request 请求任务. 每获取到一个非空的 request 时. 就会执行一个线程去运行
             while (SpiderConstants.STAT_RUNNING == stat.get()){
+
                 Request request = getScheduler().poll(this);
                 // 获取请求为null. 判断程序是否执行完成
                 if (request == null){
@@ -155,19 +149,26 @@ public class Spider implements Runnable, Task {
                         // 执行任务
                         executeRequest(executeRequest);
                     }finally {
-                        pageCount.incrementAndGet();
+                        // 执行间隔
+                        sleep(getSite().getSleepTime());
                     }
                 });
             }
         }finally {
-            // 执行完成 - 设置执行状态为停止
-            stat.set(SpiderConstants.STAT_STOPPED);
-            // 清理缓存信息
-            SpiderFactory.cloneSpider(getUUID());
-            // 清理线程上下文信息
-            ThreadLocalQueueScheduler.clearContext();
+            destroy();
         }
         logger.info("Spider {} closed! {} pages downloaded.", getUUID(), pageCount.get());
+    }
+
+    protected void destroy(){
+        // 执行完成 - 设置执行状态为停止
+        stat.set(SpiderConstants.STAT_STOPPED);
+        // 关闭执行线程
+        threadPool.shutdown();
+        // 清理缓存信息
+        SpiderFactory.cloneSpider(getUUID());
+        // 清理线程上下文信息
+        ThreadLocalQueueScheduler.clearContext();
     }
 
     /**
@@ -175,6 +176,7 @@ public class Spider implements Runnable, Task {
      */
     private void executeRequest(Request request) {
         logger.info("execute -> [{}-{}]", request.getMethod(), request.getUrl());
+        pageCount.incrementAndGet();
         try {
             // 1. 下载界面信息
             Page page = downloaderRequest(request);
@@ -193,10 +195,6 @@ public class Spider implements Runnable, Task {
         }catch (Exception e){
             // 中断请求
             logger.error("execute request error Request -> [{}]", request, e);
-        }finally {
-            pageCount.incrementAndGet();
-            // 执行间隔
-            sleep(getSite().getSleepTime());
         }
     }
 
@@ -262,10 +260,8 @@ public class Spider implements Runnable, Task {
             logger.warn("请求 -> [{}]. 超过配置的重试次数 -> [{}]", request.getUrl(), cycleTriedTimesObject);
             return;
         }
-        cycleTriedTimesObject++;
-        logger.info("请求 -> [{}]. 重试次数 -> [{}]", request.getUrl(), cycleTriedTimesObject);
+        logger.info("请求 -> [{}]. 重试次数 -> [{}]", request.getUrl(), cycleTriedTimesObject++);
         addRequest(SerializationUtils.clone(request).putExtra(Request.CYCLE_TRIED_TIMES, cycleTriedTimesObject));
-        sleep(getSite().getRetrySleepTime());
     }
 
     private void addRequest(Request request) {

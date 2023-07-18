@@ -4,8 +4,6 @@ import lombok.Data;
 import org.junit.Test;
 import us.codecraft.webmagic.annotations.Extract;
 import us.codecraft.webmagic.annotations.ExtractUrl;
-import us.codecraft.webmagic.downloader.component.proxy.Proxy;
-import us.codecraft.webmagic.downloader.component.proxy.SimpleProxyProvider;
 import us.codecraft.webmagic.emus.ExtractTypeEnum;
 import us.codecraft.webmagic.pipeline.ConsolePipeline;
 
@@ -18,13 +16,9 @@ public class SpiderTest {
 
     @Test
     public void db(){
-        SimpleProxyProvider from = SimpleProxyProvider.from(new Proxy("39.104.88.192", 3000));
-
-        for (int i = 0; i < 10; i++){
-            Spider spider = SpiderFactory.createSpider(new ConsolePipeline());
-            // 豆瓣检索 支持按照书名称、isbn、作者进行查询
-            spider.start("https://book.douban.com/j/subject_suggest?q=鲁迅", SpiderTest.DB.class);
-        }
+        Spider spider = SpiderFactory.createSpider(new ConsolePipeline());
+        // 豆瓣检索 支持按照书名称、isbn、作者进行查询
+        spider.start("https://book.douban.com/j/subject_suggest?q=鲁迅", SpiderTest.DB.class);
     }
 
 

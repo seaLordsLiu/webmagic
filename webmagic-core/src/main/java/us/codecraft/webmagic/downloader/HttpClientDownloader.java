@@ -43,7 +43,7 @@ public class HttpClientDownloader implements Downloader {
     /**
      * 代理信息
      */
-    private ProxyProvider proxyProvider = SimpleProxyProvider.from(new Proxy("223.241.118.100", 1133));;
+    private ProxyProvider proxyProvider;
 
     public void setProxyProvider(ProxyProvider proxyProvider) {
         this.proxyProvider = proxyProvider;
@@ -82,6 +82,7 @@ public class HttpClientDownloader implements Downloader {
             page = handleResponse(request, request.getCharset() != null ? request.getCharset() : task.getSite().getCharset(), httpResponse, task);
             return page;
         } catch (IOException e) {
+            log.error("download page {} error", request.getUrl(), e);
             return page;
         } finally {
             if (httpResponse != null) {

@@ -5,11 +5,13 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.function.impl.StringToAny;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import us.codecraft.webmagic.ExtractFormatFactory;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.PageResult;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.annotations.Extract;
 import us.codecraft.webmagic.annotations.ExtractUrl;
+import us.codecraft.webmagic.annotations.component.format.ExtractFormat;
 import us.codecraft.webmagic.annotations.metadata.ClassMetadata;
 import us.codecraft.webmagic.annotations.metadata.FieldMetadata;
 import us.codecraft.webmagic.emus.ExtractTypeEnum;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
  * @date 2023 07-06
  */
 public class ModelExtractParser implements ExtractParser<ClassMetadata> {
+
 
     @Override
     public void parser(ClassMetadata metadata, Page page, PageResult result) {
@@ -89,7 +92,7 @@ public class ModelExtractParser implements ExtractParser<ClassMetadata> {
         if (StringUtils.isNotBlank(extractUrl.filterRegEx())){
             requestStrList = requestStrList.stream()
                     .filter(StringUtils::isNotBlank)
-                    .filter(req -> Pattern.matches (extractUrl.filterRegEx(),req))
+                    .filter(req -> Pattern.matches(extractUrl.filterRegEx(),req))
                     .collect(Collectors.toList());
         }
 
@@ -108,29 +111,34 @@ public class ModelExtractParser implements ExtractParser<ClassMetadata> {
      * @return 结果
      */
     private List<String> parserOnExtract(Extract extract, Page page) {
-        if (extract == null){
-            return null;
-        }
         // 2. 解析界面信息
         List<String> originalDataList = null;
-        if (ExtractTypeEnum.HTML.equals(extract.type())){
-            // 2.1 解析HTML类型的数据
-            originalDataList = htmlParser(extract, page);
-        }
-        if (ExtractTypeEnum.JSON.equals(extract.type())){
-            // 2.1 解析HTML类型的数据
-            originalDataList = jsonParser(extract, page);
+
+        if (extract == null){
+            return Collections.emptyList();
+        }else {
+            if (ExtractTypeEnum.HTML.equals(extract.type())){
+                // 2.1 解析HTML类型的数据
+                originalDataList = htmlParser(extract, page);
+            }
+            if (ExtractTypeEnum.JSON.equals(extract.type())){
+                // 2.1 解析HTML类型的数据
+                originalDataList = jsonParser(extract, page);
+            }
+
+            if (CollectionUtils.isEmpty(originalDataList)){
+                originalDataList = Collections.emptyList();
+            }
         }
 
-        if (CollectionUtils.isEmpty(originalDataList)){
-            return null;
+        // 补充一层数据解析器
+        if (extract.format() == null){
+            return originalDataList;
         }
 
-        return originalDataList;
+        ExtractFormat extractFormat = ExtractFormatFactory.getExtractFormat(extract.format());
+        return extractFormat.format(originalDataList, page);
     }
-
-
-
 
     /**
      * 选择需要解析的领域数据 - 属性

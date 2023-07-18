@@ -1,5 +1,7 @@
 package us.codecraft.webmagic.annotations;
 
+import us.codecraft.webmagic.annotations.component.format.DefaultExtractFormat;
+import us.codecraft.webmagic.annotations.component.format.ExtractFormat;
 import us.codecraft.webmagic.emus.ExtractTypeEnum;
 
 import java.lang.annotation.*;
@@ -27,5 +29,10 @@ public @interface Extract {
      * @return 默认是空
      */
     String value();
+
+    /**
+     * 数据格式化
+     */
+    Class<? extends ExtractFormat> format() default DefaultExtractFormat.class;
 
 }

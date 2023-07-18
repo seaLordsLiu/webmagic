@@ -1,5 +1,8 @@
 package us.codecraft.webmagic.annotations;
 
+import us.codecraft.webmagic.annotations.component.format.DefaultExtractFormat;
+import us.codecraft.webmagic.annotations.component.format.ExtractFormat;
+
 import java.lang.annotation.*;
 
 /**

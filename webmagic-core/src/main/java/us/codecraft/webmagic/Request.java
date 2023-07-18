@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import us.codecraft.webmagic.downloader.Downloader;
 import us.codecraft.webmagic.model.HttpRequestBody;
 import us.codecraft.webmagic.utils.Experimental;
+import us.codecraft.webmagic.utils.UserAgentUtil;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -18,13 +19,19 @@ import java.util.Map;
  * @since 0.1.0
  */
 @Data
-@RequiredArgsConstructor
 public class Request implements Serializable {
 
     private static final long serialVersionUID = 2062192774891352043L;
 
     public static final String CYCLE_TRIED_TIMES = "_cycle_tried_times";
 
+    public Request(String url, Class<?> extractClazz) {
+        this.url = url;
+        this.extractClazz = extractClazz;
+
+        // 随即头
+        this.headers.put("User-Agent", UserAgentUtil.randomUserAgent());
+    }
 
     /**
      * 请求url
