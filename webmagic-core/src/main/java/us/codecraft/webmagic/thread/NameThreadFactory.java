@@ -3,6 +3,7 @@ package us.codecraft.webmagic.thread;
 import lombok.NonNull;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 指定名称的线程工厂
@@ -11,7 +12,15 @@ import java.util.concurrent.ThreadFactory;
  */
 public class NameThreadFactory implements ThreadFactory {
 
+    /**
+     * 名称
+     */
     private final String threadName;
+
+    /**
+     * 计数
+     */
+    private final AtomicInteger threadNum = new AtomicInteger(1);
 
     public NameThreadFactory(String threadName) {
         this.threadName = threadName;
@@ -19,7 +28,7 @@ public class NameThreadFactory implements ThreadFactory {
 
     @Override
     public Thread newThread(@NonNull Runnable r) {
-        Thread thread = new Thread(r, threadName);
+        Thread thread = new Thread(r, threadName + "-" + threadNum.getAndIncrement());
         thread.setDaemon(true);
         return thread;
     }

@@ -13,6 +13,7 @@ import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.scheduler.Scheduler;
 import us.codecraft.webmagic.scheduler.ThreadLocalQueueScheduler;
 import us.codecraft.webmagic.thread.CountableThreadPool;
+import us.codecraft.webmagic.thread.NameThreadFactory;
 import us.codecraft.webmagic.utils.HttpConstant;
 import us.codecraft.webmagic.utils.UrlUtils;
 
@@ -22,6 +23,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -96,11 +100,20 @@ public class Spider implements Runnable, Task {
      */
     private final AtomicLong pageCount = new AtomicLong(0);
 
+
+    /**
+     * 执行任务 - 线程数量
+     */
+    @Setter
+    @Getter
+    private Integer countableThreadNum = 1;
+
     /**
      * 执行任务信息
      */
-    @Setter
+    @Getter
     private CountableThreadPool threadPool = null;
+
 
     /**
      * 初始化程序
@@ -108,9 +121,18 @@ public class Spider implements Runnable, Task {
     private void init(){
         // 初始化 - 执行任务
         stat.set(SpiderConstants.STAT_RUNNING);
-        if (threadPool == null){
-            threadPool = new CountableThreadPool(1);
-        }
+
+        // 初始化执行线程池 - 固定数量线程池
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+                countableThreadNum,
+                countableThreadNum,
+                0L,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>()
+//                , new NameThreadFactory(getUUID() + "$"),
+        );
+
+        threadPool = new CountableThreadPool(countableThreadNum, threadPoolExecutor);
 
         // 补充入口请求信息
         this.addRequest(entranceRequest);

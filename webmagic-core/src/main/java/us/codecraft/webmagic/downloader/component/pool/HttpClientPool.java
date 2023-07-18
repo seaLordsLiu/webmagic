@@ -45,7 +45,7 @@ public class HttpClientPool {
     /**
      * 心跳检测线程
      */
-    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new NameThreadFactory("httpClientPool-heartbeat-scheduled"));;
+    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new NameThreadFactory("webMagic-httpClientPool-heartbeat-scheduled"));
 
     /**
      * 获取HTTP请求客户端
